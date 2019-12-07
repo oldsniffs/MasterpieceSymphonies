@@ -1,0 +1,10 @@
+12/6
+
+Getting proportions could be very complicated, and the duration lists generally won't be very dynamic. Going to
+just hard code a weight for each note type for now.
+
+
+
+User Feedback Needed:
+
+Comments on weights, appropriate durations in durationsre.py

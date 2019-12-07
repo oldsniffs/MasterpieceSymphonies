@@ -1,3 +1,5 @@
+import durations
+
 
 def create_ly(content, file_name):
     file = open(f'{file_name}.ly', 'w')
@@ -5,12 +7,25 @@ def create_ly(content, file_name):
     file.close
 
 
+def compose(total_beats):
+    rhythm = durations.allot_rhythm(total_beats)
+    composition = ""
+    for n in rhythm:
+        composition = composition + f'c{n} '
+
+    return composition
+
+
+right_hand = compose(64)
 content = """upper = {
   \\clef treble
   \\key c \\major
   \\time 4/4
+  
+"""
+content = content + right_hand
 
-  a4 b c d 
+content = content + """
 }
 
 lower = {
@@ -18,8 +33,6 @@ lower = {
   \\key c \\major
   \\time 4/4
 
-  a2 c a,, c,, a, c,
-  a,,1 c, e, f,
 }
 
 \\score {
@@ -32,9 +45,11 @@ lower = {
   \\midi { }
 } """
 
+print(right_hand)
 create_ly(content, 'tester')
-
+#
 # file = open('testly.ly', 'w')
 #
 # file.write(content)
 # file.close
+

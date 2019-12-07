@@ -1,4 +1,5 @@
 import random
+import durations
 
 
 AGG_NOTES = 64
@@ -10,6 +11,7 @@ def get_beat_count(total_notes, time_signature):
     while total_beats % time_signature[0] != 0:
         total_beats -= 1
     return total_beats
+
 
 
 # Generate Music

@@ -53,7 +53,8 @@ def generate_key(root, key_type):
     if key_type == "major":
         # key is a list of indexes for either flat or sharp pitch list, highlighting in key notes
         key = []
-        if root in ["g", ""]
+        if root in ["g", "d", "a", "e", "b", "fis", "cis"]:
+            pass
 
 
 
@@ -64,7 +65,7 @@ def allot_pitches(rhythm_list, pitch_range='Normal', accidental_frequency=6):
 
     direction = "up"
     l_index = 10
-    starting_l_pitch = left_pitches[l_index]
+    starting_l_pitch = generate_sharp_list()[l_index]  # Basically deprecated
     print(starting_l_pitch)
 
     l_pitches = [starting_l_pitch]
@@ -84,8 +85,8 @@ def allot_pitches(rhythm_list, pitch_range='Normal', accidental_frequency=6):
                 else:
                     l_index -= interval
                 print(l_index)
-                print(left_pitches[l_index])
-                l_pitches.append(left_pitches[l_index])
+                # print(left_pitches[l_index])
+                # l_pitches.append(left_pitches[l_index])
             except IndexError:
                 if direction == "up":
                     direction = "down"
@@ -166,5 +167,3 @@ if __name__ == "__main__":
 
     durations_list = durations.allot_rhythm(64)
 
-    for i in allot_pitches(durations_list):
-        print(i)

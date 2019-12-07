@@ -44,12 +44,15 @@ def allot_rhythm(total_beats, time_signature=(4, 4)):
         old_beat_count = beat_count
         beat_count = beat_count + new_duration[1]
 
+        # if note carries into new measure, and song isn't over
         if check_bar_cross(old_beat_count, beat_count, time_signature) and beat_count < total_beats:
             # either reroll, or enter new measure with 2 tied notes
+            print('bar crossed, ')
             if random.randint(0, 1) == 0:
                 print('killing overflow duration')
                 rhythm.pop()
                 beat_count -= new_duration[1]
+                continue
             else:
                 print('splitting over measure')
                 overflow = beat_count % time_signature[0]
@@ -76,18 +79,29 @@ def allot_rhythm(total_beats, time_signature=(4, 4)):
             rhythm.append(complementary_duration[0])
             beat_count = beat_count + complementary_duration[1]
 
-        # if note carries into new measure, and song isn't over
+        # 1/4, 1/8, 1/16, and 1/32 notes get a chance to extend to a set of like durations
+        if new_duration[0] == '4':
+            # roll a multiple
+            # check if it will fit piece, fall on measure line
+            sequence = random.choices([1, 2, 3], [3, 2, 1])
 
-        elif beat_count > total_beats:
+
+
+
+
+        if beat_count > total_beats:
             print('crossed limit, getting new duration')
             rhythm.pop()
             beat_count -= new_duration[1]
+            continue
 
         print(f'beat count:{beat_count}  newest beat:{new_duration[1]}')
 
-        cycle_count += 1
     return rhythm
 
+
+def beats_left_in_measure(current_beat, time_signature):
+    pass
 
 # Check to see if a bar has been crossed by a beat
 def check_bar_cross(start_beat, end_beat, time_signature):
