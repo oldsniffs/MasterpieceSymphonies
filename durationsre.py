@@ -10,137 +10,138 @@ measures = 16
 time_signature = (4, 4)
 
 
-def get_rhythm(measures, time_signature):
+class Rhythm:
+	def __init__(self, measures, time_signature):
+		self.measures = measures
+		self.time_signature = time_signature
+		self.duration_list = self.get_appropriate_durations()
+		self.weights_list = self.get_weights()
 
-	measure = 1
+		self.pattern = self.make_pattern()
 
-	# Durations and propabilities for randomizer
-	duration_list = get_appropriate_durations((time_signature))
-	weights = get_weights(duration_list)
+	def make_pattern(self):
 
-	rhythm = []
+		pattern = []
+		measure = 1
 
-	tied_carryover_beat = 0
-	while measure <= measures:
+		tied_carryover_beat = 0
+		while measure <= self.measures:
 
-		if tied_carryover_beat:
-			for duration in duration_list:
-				if duration[1] == tied_carryover_beat:
-					rhythm.append(f"{duration[0]}")
-					break
+			if tied_carryover_beat:
+				for duration in self.duration_list:
+					if duration[1] == tied_carryover_beat:
+						pattern.append(f"{duration[0]}")
+						break
 
-			beat = tied_carryover_beat
+				beat = tied_carryover_beat
 
-		else:	
-			beat = 0
+			else:
+				beat = 0
 
-		while beat < time_signature[1]:
-			
-			new_duration = get_random_duration(duration_list, weights)
-			print(f"printing new duration[0] {new_duration[0]}")
-			beat += new_duration[1]
+			while beat < self.time_signature[1]:
 
-			if beat == time_signature[1]:
+				new_duration = self.get_random_duration()
+				print(f"Virgin new_duration[0]: {new_duration[0]}")
+				beat += new_duration[1]
 
-				rhythm.append(f"{new_duration[0]} | ")
+				if beat == self.time_signature[1]:
 
-			elif beat > time_signature[1]:
+					pattern.append(f"{new_duration[0]} | ")
 
-				beat -= new_duration[1]
+				elif beat > self.time_signature[1]:
 
-				if measure == measures:
-					new_duration = fill_measure(beat, time_signature, duration_list)
+					beat -= new_duration[1]
 
-				roll = random.randint(0,3)
+					if measure == self.measures:
+						new_duration = self.fill_measure(beat)
 
-				# Backtrack beat, reroll new duration
-				if roll == 0:
-					print("LOG: Measure overrun, getting different beat")
-					continue
+					roll = random.randint(0,3)
 
-				# Fill measure
-				elif roll == 1:
-					finishing_durations = fill_measure(beat, time_signature, duration_list)
-					# probably roll for if fill notes should be tied or separate
-					rhythm.append(f"{finishing_durations[0][0]}~ ")
-					new_duration = finishing_durations[1]
+					# Backtrack beat, reroll new duration
+					if roll == 0:
+						print("LOG: Measure overrun, getting different beat")
+						continue
 
+					# Fill measure
+					elif roll == 1:
+						finishing_durations = self.fill_measure(beat)
+						# probably roll for if fill notes should be tied or separate
+						pattern.append(f"{finishing_durations[0][0]}~ ")
+						new_duration = finishing_durations[1]
 
-				# Carryover to a tied note in next measure
-				# Needs to do same as previous roll, but also give tied_carryover_beat
-				elif roll == 2:
-					finishing_durations = fill_measure(beat, time_signature, duration_list)
-					for fd in finishing_durations:
-						rhythm.append(f"{fd[0]}~ ")
-					tied_carryover_beat = beat % time_signature[0]
+					# Carryover to a tied note in next measure
+					# Needs to do same as previous roll, but also give tied_carryover_beat
+					elif roll == 2:
+						finishing_durations = self.fill_measure(beat)
+						for fd in finishing_durations:
+							pattern.append(f"{fd[0]}~ ")
+						tied_carryover_beat = beat % self.time_signature[0]
 
-			rhythm.append(f"{new_duration[0]} ")
+				pattern.append(f"{new_duration[0]} ")
 
-		rhythm.append("| ")
-		measure += 1
+			pattern.append("| ")
+			measure += 1
 
-	return rhythm
-
-
-def fill_measure(current_beat, time_signature, duration_list):
-	# delete if working: if one split doesn't work, use a while loop to keep splitting
-	# while fill_beats < remaining_beats  --- get next sized duration
-	remaining_beats = current_beat - time_signature[0]
-
-	for duration in duration_list:
-		if duration[1] == remaining_beats:
-			return [duration]
-
-	# Needs to split
-	finishing_durations = []
-
-	for duration in duration_list:
-		if duration[1] < remaining_beats:
-			finishing_durations.append(duration)
-			remaining_beats -= duration[1]
-
-			for smaller_duration in duration_list:
-				if duration == remaining_beats:
-					finishing_durations.insert(0, smaller_duration)
-		return finishing_durations
-
-def get_random_duration(duration_list, weights_list):
-	return random.choices(duration_list, weights=weights_list)[0]
-
-# Proportion generation could well change with user feedback. 
-# Does time signature matter? Are 1/8 notes more common in 6/8 than 3/4?
-# Should large notes be left appropriate, and allowed to form long tied carryovers? -> could be a user setting?
-def get_weights(d_list):
-	return [weight[1] for weight in [dw for dw in DURATION_WEIGHTS if dw[0] in [d[0] for d in d_list]]]
+		return pattern
 
 
-def get_appropriate_durations(time_signature):
-	beat_values = generate_beat_value_list(time_signature)
-	return [bv for bv in beat_values if time_signature[0] >= bv[1]]
+	def fill_measure(self, current_beat):
+		# delete if working: if one split doesn't work, use a while loop to keep splitting
+		# while fill_beats < remaining_beats  --- get next sized duration
+		remaining_beats = current_beat - self.time_signature[0]
+		print(f"LOG: {remaining_beats} left in measure. Attempting to fill.")
+
+		for duration in self.duration_list:
+			if duration[1] == remaining_beats:
+				return [duration]
+
+		# Needs to split
+		finishing_durations = []
+
+		for duration in self.duration_list:
+			if duration[1] < remaining_beats:
+				finishing_durations.append(duration)
+				remaining_beats -= duration[1]
+
+				for smaller_duration in self.duration_list:
+					if duration == remaining_beats:
+						finishing_durations.insert(0, smaller_duration)
+			return finishing_durations
+
+	def get_random_duration(self):
+		return random.choices(self.duration_list, self.weights_list)[0]
+
+	# Proportion generation could well change with user feedback.
+	# Does time signature matter? Are 1/8 notes more common in 6/8 than 3/4?
+	# Should large notes be left appropriate, and allowed to form long tied carryovers? -> could be a user setting?
+	def get_weights(self):
+		return [weight[1] for weight in [dw for dw in DURATION_WEIGHTS if dw[0] in [d[0] for d in self.duration_list]]]
+
+	def get_appropriate_durations(self):
+		beat_values = self.generate_beat_value_list()
+		return [bv for bv in beat_values if self.time_signature[0] >= bv[1]]
 
 
-def generate_beat_value_list(time_signature):
+	def generate_beat_value_list(self):
 
-    beat_values = []
-    for d in ALL_DURATION_NOTATIONS:
+		beat_values = []
+		for d in ALL_DURATION_NOTATIONS:
 
-        if '.' in d:
-            base_value = 1/int(d[:-1])
-            beat_value = base_value * time_signature[1] * 1.5
-        else:
-            base_value = 1/int(d)
-            beat_value = base_value * time_signature[1]
+			if '.' in d:
+				base_value = 1/int(d[:-1])
+				beat_value = base_value * self.time_signature[1] * 1.5
+			else:
+				base_value = 1/int(d)
+				beat_value = base_value * self.time_signature[1]
 
-        beat_values.append((d, beat_value))
+			beat_values.append((d, beat_value))
 
-    return beat_values
+		return beat_values
 
 
-# for ad in get_appropriate_durations((4,4)):
-# 	print(ad)
 
-# for prop in get_weights(get_appropriate_durations((4,4))):
-# 	print(prop)
+if __name__ == "__main__":
 
-for r in get_rhythm(10, (4,4)):
-	print(r)
+	rhythm = Rhythm(16, (3, 4))
+	for ad in rhythm.get_appropriate_durations():
+		print(ad)
