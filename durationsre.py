@@ -46,45 +46,63 @@ def get_rhythm(measures, time_signature):
 
 			elif beat > time_signature[1]:
 
+				beat -= new_duration[1]
+
 				if measure == measures:
 					new_duration = fill_measure(beat, time_signature, duration_list)
-					continue
 
-				roll = random.randint(0,2)
+				roll = random.randint(0,3)
 
 				# Backtrack beat, reroll new duration
 				if roll == 0:
-					beat -= new_duration[1]
+					print("LOG: Measure overrun, getting different beat")
 					continue
 
 				# Fill measure
 				elif roll == 1:
-					new_duration = fill_measure(beat, time_signature, duration_list)
-					rhythm.append(f"{new_duration[0]} | ")
+					finishing_durations = fill_measure(beat, time_signature, duration_list)
+					for fd in finishing_durations:
+						# probably roll for tie or not. maybe just tie
+						finishing = fd
+						if fd != finishing_durations[-1]:
+
+						rhythm.append(f"{fd[0]}")   # ____________ Left off here
+
 
 				# Carryover to a tied note in next measure
 				elif roll == 2:
-					new_duration = fill_measure(beat, time_signature, duration_list)
-					rhythm.append(f"{new_duration[0]}~ | ")
-					tied_carryover_beat = new_duration[1]
+					finishing_durations = fill_measure(beat, time_signature, duration_list)
+					for fd in finishing_durations:
+						rhythm.append(f"{fd[0]}~ ")
+					tied_carryover_beat = beat % time_signature[0]
 
-			else:
+			rhythm.append(f"{new_duration[0]} ")
 
-				rhythm.append(f"{new_duration[0]} ")
-
+		rhythm.append("| ")
 		measure += 1
 
 	return rhythm
 
 
 def fill_measure(current_beat, time_signature, duration_list):
+	# delete if working: if one split doesn't work, use a while loop to keep splitting
 	remaining_beats = current_beat - time_signature[0]
-	print(f"Determining carryover duration for {remaining_beats} beats")
 
 	for duration in duration_list:
 		if duration[1] == remaining_beats:
-			return duration
+			return [duration]
 
+	# Needs to split
+	finishing_durations = []
+	for duration in duration_list:
+		if duration[1] < remaining_beats:
+			finishing_durations.append(duration)
+			remaining_beats -= duration[1]
+
+			for smaller_duration in duration_list:
+				if duration == remaining_beats:
+					finishing_durations.insert(0, smaller_duration)
+		return finishing_durations
 
 def get_random_duration(duration_list, weights_list):
 	return random.choices(duration_list, weights=weights_list)[0]
