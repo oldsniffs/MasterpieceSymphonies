@@ -61,15 +61,13 @@ def get_rhythm(measures, time_signature):
 				# Fill measure
 				elif roll == 1:
 					finishing_durations = fill_measure(beat, time_signature, duration_list)
-					for fd in finishing_durations:
-						# probably roll for tie or not. maybe just tie
-						finishing = fd
-						if fd != finishing_durations[-1]:
-
-						rhythm.append(f"{fd[0]}")   # ____________ Left off here
+					# probably roll for if fill notes should be tied or separate
+					rhythm.append(f"{finishing_durations[0][0]}~ ")
+					new_duration = finishing_durations[1]
 
 
 				# Carryover to a tied note in next measure
+				# Needs to do same as previous roll, but also give tied_carryover_beat
 				elif roll == 2:
 					finishing_durations = fill_measure(beat, time_signature, duration_list)
 					for fd in finishing_durations:
@@ -86,6 +84,7 @@ def get_rhythm(measures, time_signature):
 
 def fill_measure(current_beat, time_signature, duration_list):
 	# delete if working: if one split doesn't work, use a while loop to keep splitting
+	# while fill_beats < remaining_beats  --- get next sized duration
 	remaining_beats = current_beat - time_signature[0]
 
 	for duration in duration_list:
@@ -94,6 +93,7 @@ def fill_measure(current_beat, time_signature, duration_list):
 
 	# Needs to split
 	finishing_durations = []
+
 	for duration in duration_list:
 		if duration[1] < remaining_beats:
 			finishing_durations.append(duration)
