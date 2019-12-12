@@ -185,4 +185,4 @@ class Measure:
 		self.beats_per_measure = beats_per_measure
 		self.pattern = []
 
-rhythm = Rhythm(10, (3,4))
+rhythm = Rhythm(16, (5,16))

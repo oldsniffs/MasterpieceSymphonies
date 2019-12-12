@@ -13,6 +13,8 @@ A_TO_G = ["a", "b", "c", "d", "e", "f", "g"]
 OCTAVE_SUFFIXES = [",,,,", ",,,", ",,", ",", "", "'", "''", "'''"]
 ACCIDENTAL = ["es", "", "is"]
 
+# Interval sets give tuple: list of intervals and list of corresponding weights
+MAJOR_INTERVAL_SET_1 = ([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], [10, 25, 5, 20, 20, 6, 12, 1, 8, 1, 4, 2])
 
 # Generates master list of all available pitches of all accidental formats for MASTER_LIST
 def generate_master_list():
@@ -57,7 +59,6 @@ def generate_key(root, key_type):
             pass
 
 
-
 def allot_pitches(rhythm_list, pitch_range='Normal', accidental_frequency=6):
     # Placeholder if statement to allow user decided pitch ranges
     if pitch_range != 'Normal':
@@ -96,37 +97,8 @@ def allot_pitches(rhythm_list, pitch_range='Normal', accidental_frequency=6):
     return l_pitches
 
 
-def get_interval_magnitude():
-    roll = random.randint(1, 100)
-    interval = 0
-    if roll <= 10:
-        interval = 1
-    elif 10 < roll <= 35:
-        interval = 2
-    elif 35 < roll <= 40:
-        interval = 3
-    elif 40 < roll <= 60:
-        interval = 4
-    elif 60 < roll <= 68:
-        interval = 5
-    elif 68 < roll <= 72:
-        interval = 0
-    elif 72 < roll <= 80:
-        interval = 6
-    elif 80 < roll <= 85:
-        interval = 7
-    elif 85 < roll <= 90:
-        interval = 8
-    elif 90 < roll <= 94:
-        interval = 9
-    elif 94 < roll <= 96:
-        interval = 10
-    elif 96 < roll <= 98:
-        interval = 11
-    elif 98 < roll <= 100:
-        interval = 12
-
-    return interval
+def get_interval_magnitude(interval_set):
+    return random.choices(interval_set[0], interval_set[1])
 
 
 def get_interval_direction(last_direction):
@@ -144,6 +116,7 @@ def get_interval_direction(last_direction):
 
 
 def make_accidental(note):
+    # Needs to handle rare cases of flat c,f and sharp b,e
     if 'c' or 'f' in note:
         return sharpen(note)
     elif 'b' or 'e' in note:
@@ -163,7 +136,4 @@ def sharpen(note):
 
 
 if __name__ == "__main__":
-    import durations
-
-    durations_list = durations.allot_rhythm(64)
-
+    print(generate_master_list())
