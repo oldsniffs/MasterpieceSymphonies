@@ -7,6 +7,7 @@ The current challenge is to break down odd beat counts (ie 1.25) to complete a m
 note, then repeat this until complete. If I can determine a duration to complete the measure, this would work with tieing carry-overs as well.
 
 
+
 User Feedback Needed:
 
-Comments on weights, appropriate durations in durationsre.py
+for tied rollover into new measure, should larger duration come first?

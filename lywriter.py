@@ -1,4 +1,4 @@
-import durations
+import durationsre
 
 
 def create_ly(content, file_name):
@@ -8,7 +8,7 @@ def create_ly(content, file_name):
 
 
 def compose(total_beats):
-    rhythm = durations.allot_rhythm(total_beats)
+    rhythm = durationsre.Rhythm(10, (4,4))
     composition = ""
     for n in rhythm:
         composition = composition + f'c{n} '
