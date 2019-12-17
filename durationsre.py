@@ -21,20 +21,17 @@ class Rhythm:
 		self.weights_list = self.get_weights()
 		print(f"DISPLAYING self.weights_list: {self.weights_list}\n")
 
-		self.right_hand_pattern = []
+		self.pattern = []
 		self.make_right_hand_pattern()
-		print(f"DISPLAYING right_hand_pattern: {self.right_hand_pattern}")
 
 	def make_right_hand_pattern(self):
 
-		right_hand_pattern = []
-
 		tied_carryover_beats = 0
+
 		for measure in range(self.measures):
 
 			new_measure = Measure(measure+1, self.time_signature[0])
 			print(f"LOG: =========== starting measure number {new_measure.number}============")
-			self.right_hand_pattern.append(f"M{new_measure.number}")
 
 			if tied_carryover_beats:
 				print(f"LOG: {tied_carryover_beats} tied carryover beats detected, seeking appropriate tied duration to start measure")
@@ -87,11 +84,18 @@ class Rhythm:
 				else:
 					new_measure.right_hand_pattern.append(new_duration[0])
 
-			self.right_hand_pattern += new_measure.right_hand_pattern
-			self.right_hand_pattern.append("| ")
-			print(f"LOG: {new_measure.beats} in measure {new_measure.number}. Adding it's right_hand_pattern: {new_measure.right_hand_pattern}: ")
+			self.pattern.append(new_measure)
+			print(f"LOG: {new_measure.beats} in measure {new_measure.number}. Adding it to pattern with right hand pattern: {new_measure.right_hand_pattern}: ")
 			
-		print(f"DISPLAYING finished self.right_hand_pattern: {self.right_hand_pattern}")
+		print(f"DISPLAYING finished right hand: {self.display_right_hand_pattern()}")
+
+	def display_right_hand_pattern(self):
+		rh_display = ""
+		for measure in self.pattern:
+			for d in measure.right_hand_pattern:
+				rh_display += f"{d} "
+			rh_display += "| "
+		return rh_display
 
 	def fill_carry_over(self, measure, carryover_beats, tied=True):
 		print(f"LOG: (fill_carry_over) filling carryover of {carryover_beats} beats")
@@ -100,9 +104,9 @@ class Rhythm:
 			if duration[1] <= carryover_beats:
 				print(f"LOG: {duration} found to fit ")
 				if tied == True:
-					measure.right_hand_pattern.insert(0, duration[0]+"~")
+					measure.right_hand_pattern.append(duration[0]+"~")
 				else:
-					measure.right_hand_pattern.insert(0, duration[0])
+					measure.right_hand_pattern.append(duration[0])
 				carryover_beats -= duration[1]
 		# Remove tie from last duration
 		if tied == True:
@@ -184,5 +188,9 @@ class Measure:
 		self.beats = 0
 		self.beats_per_measure = beats_per_measure
 		self.right_hand_pattern = []
+		self.left_hand_pattern = []
 
-rhythm = Rhythm(16, (5,16))
+
+if __name__ == "__main__":
+	rhythm = Rhythm(16, (3,4))
+	print(rhythm.display_right_hand_pattern)
