@@ -1,20 +1,25 @@
 """
-TODO: Direction needs to be tweaked so the farther from anchor point, the more likely direction is to return
+TODO: Direction needs to be tweaked so the farther from anchor point, the more likely direction is to return. Anchors should shift as well
 TODO: If meets client needs, interval magnitude selection must be normalized to a key, so accidentals are key based. Would need a list for natural steps, and a way to know where
 appropriate half note accidentals should be avoided (so no C flat, etc)
 """
 
+import durationsre
 import random
 
-MAJOR_KEY_SCALE = [2, 2, 1, 2, 2, 2, 1, 2]
-MINOR_KEY_SCALE = [2, 1, 2, 2, 1, 2, 2, 1]
+# This interval list probably deprecated
+MAJOR_SCALE = [2, 2, 1, 2, 2, 2, 1]
+# NATURAL_MINOR_SCALE = [2, 1, 2, 2, 1, 2, 2, 1]
+# HARMONIC_MINOR_SCALE = [2, 1, 2, 2, 1, 2,]
 # If not needed elsewhere, can move some of following into generate_master_list
 A_TO_G = ["a", "b", "c", "d", "e", "f", "g"]
 OCTAVE_SUFFIXES = [",,,,", ",,,", ",,", ",", "", "'", "''", "'''"]
 ACCIDENTAL = ["es", "", "is"]
 
 # Interval sets give tuple: list of intervals and list of corresponding weights
-MAJOR_INTERVAL_SET_1 = ([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], [10, 25, 5, 20, 20, 6, 12, 1, 8, 1, 4, 2])
+INTERVALS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+MAJOR_WEIGHTS_1 = [10, 25, 5, 20, 20, 6, 12, 1, 8, 1, 4, 2]
+MINOR_WEIGHTS_1 = []
 
 # Generates master list of all available pitches of all accidental formats for MASTER_LIST
 def generate_master_list():
@@ -23,11 +28,11 @@ def generate_master_list():
     for suffix in OCTAVE_SUFFIXES:
         for p in A_TO_G:
             for a in ACCIDENTAL:
-                master_list.append(f"{p}{suffix}{a}")
+                master_list.append(f"{p}{a}{suffix}")
 
     # Finishing touch to match up with real piano
     del master_list[0]
-    for n in ["a'''es", "a'''", "a'''is", "b'''es", "b'''", "b'''is", "c''''es", "c''''"]:
+    for n in ["aes'''", "a'''", "ais'''", "bes'''", "b'''", "bis'''", "ces''''", "c''''"]:
         master_list.append(n)
 
     return master_list
@@ -36,11 +41,16 @@ def generate_master_list():
 MASTER_LIST = generate_master_list()
 
 
+
 def generate_sharp_list(master):
     sharp_list = master
     for p in sharp_list:
         if "es" in p:
             sharp_list.remove(p)
+    for p in sharp_list:
+        if 'b' in p or 'e' in p:
+            if 'is' in p:
+                sharp_list.remove(p)
     return sharp_list
 
 
@@ -49,29 +59,53 @@ def generate_flat_list(master):
     for p in flat_list:
         if "is" in p:
             flat_list.remove(p)
+    for p in flat_list:
+        if 'c' in p or 'f' in p:
+            if 'es' in p:
+                flat_list.remove(p)
+    return flat_list
+
+FLAST_LIST = generate_flat_list(MASTER_LIST)
+SHARP_LIST = generate_sharp_list(MASTER_LIST)
 
 
-def generate_key(root, key_type):
-    if key_type == "major":
-        # key is a list of indexes for either flat or sharp pitch list, highlighting in key notes
-        key = []
-        if root in ["g", "d", "a", "e", "b", "fis", "cis"]:
-            pass
+# def generate_key_scale(root, type):
+#     if type == "major":
+#         intervals = MAJOR_SCALE
+#         # key is a list of indexes for either flat or sharp pitch list, highlighting in key notes
+#         key = []
+#         if root in ["g", "d", "a", "e", "b", "fis", "cis"]:
+
+#             # find first root note in master
+#             for n in SHARP_LIST:
+#                 if n == root
+            
+
+            
 
 
-def allot_pitches(rhythm_list, pitch_range='Normal', accidental_frequency=6):
-    # Placeholder if statement to allow user decided pitch ranges
-    if pitch_range != 'Normal':
+def get_left_range(range="Normal"):
+    if range == "Normal":
+        pass
+        
+
+def fill_right_pitches(rhythm_pattern, key, pitch_range='Full'):
+    # Placeholder if statement to allow user decided pitch ranges = random.choice[MAJOR_SCALE]
+    if pitch_range != 'Full':
         pass
 
-    direction = "up"
-    l_index = 10
-    starting_l_pitch = generate_sharp_list()[l_index]  # Basically deprecated
-    print(starting_l_pitch)
+    rhythm = durationsre.Rhythm()
+
+    direction = get_interval_direction(0)
+    steps_in_same_direction = 0
+
+    # Starting index
+    anchor_index = random.choice(MAJOR_SCALE)
+    # Needs variable to track distance from original root, current anchor
 
     l_pitches = [starting_l_pitch]
-    print(f'rhythm list length: {len(rhythm_list)}')
-    while len(l_pitches) < len(rhythm_list):
+    print(f'rhythm list length: {len(rhythm_pattern)}')
+    while len(l_pitches) < len(rhythm_pattern):
         # Rests
         # Can base on user defined rest frequency, or default
         if random.randint(0, 22) == 1:
@@ -101,8 +135,11 @@ def get_interval_magnitude(interval_set):
     return random.choices(interval_set[0], interval_set[1])
 
 
-def get_interval_direction(last_direction):
-    flip = False
+def get_interval_direction(distance_from_anchor, last_direction=None):
+    # Longer it goes in one direction, more likely it should flip. can pass a counter with direction in a tuple
+    if not last_direction:
+        return random.choice(["up", "down"])
+
     if random.randint(0,2) == 0:
         flip = True
 
@@ -136,4 +173,5 @@ def sharpen(note):
 
 
 if __name__ == "__main__":
-    print(generate_master_list())
+    print(generate_sharp_list(generate_master_list()))
+    print(generate_flat_list(generate_master_list()))
