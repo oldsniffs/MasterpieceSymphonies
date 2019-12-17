@@ -13,7 +13,7 @@ test_rhythm = durationsre.Rhythm(10, (4,4))
 
 class Notation:
 
-	def __init__(self, key, key_type, right_rhythm, accidental_rate, anchor_strength):
+	def __init__(self, key, key_type, rhythm, accidental_rate, anchor_strength):
 		self.key = key
 		self.key_type = key_type
 		self.scale_map = self.get_scale_map() # Only used in function map_scale

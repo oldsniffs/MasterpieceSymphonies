@@ -57,7 +57,7 @@ lower = {
 } """
 
 print(right_hand)
-create_ly(content, 'test2')
+create_ly(content, 'test3')
 #
 # file = open('testly.ly', 'w')
 #

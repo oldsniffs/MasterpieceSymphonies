@@ -1,10 +1,15 @@
 import random
 
-ALL_DURATION_NOTATIONS = ['1.', '1', '2.', '2', '4.', '4', '8.', '8', '16.', '16', '32']
-DURATION_WEIGHTS = [('1.', 3), ('1', 12), ('2.', 6), ('2', 18), ('4.', 8), ('4', 25), ('8.', 8), ('8', 20), ('16.', 6), ('16', 12), ('32', 6)]
+ALL_DURATION_NOTATIONS = ['1.', '1', '2.', '2', '4.', '4', '8.', '8', '16.', '16', '32', '32.', '64']
+DURATION_WEIGHTS = [('1.', 3), ('1', 12), ('2.', 6), ('2', 18), ('4.', 8), ('4', 25), ('8.', 8), ('8', 20), ('16.', 6), ('16', 12), ('32.', 6), ('32', 2), ('64', 2)]
 # should odd-timed tied beats be added to duration list? Almost certainly, they should group with any other note and follow same behavior
 # Grouping them here would probably allow more precise weighting decisions. Would probably be more difficult to streamline into pattern
 # Adding a condition in pattern generation would probably be programmatically easier
+
+GROUPING_INTERVALS = ["4", "8", "16", "32"]
+GROUPING_LENGTHS = [1, 2, 3, 4, 5]
+GROUPING_WEIGHTS = [[16, 3, 1, 0, 0], [0, 4, 2, 1, 0], [0, 4, 4, 2, 1], [0, 6, 4, 4, 2]]
+
 
 # Placeholders for user defined variables:
 MEASURES = 16
@@ -27,6 +32,8 @@ class Rhythm:
 	def make_right_hand_pattern(self):
 
 		tied_carryover_beats = 0
+		grouping = [0, None] # Remaining, duration tuple
+		previous_duration = ('1', 4)
 
 		for measure in range(self.measures):
 
@@ -39,12 +46,31 @@ class Rhythm:
 
 				# See if this can be done in function
 				new_measure.beats += tied_carryover_beats
+				tied_carryover_beats = 0
+				grouping[0] = 0
+
 
 			while new_measure.beats < new_measure.beats_per_measure:
 
-				print(f"LOG Starting @ beat {new_measure.beats}")
-				new_duration = self.get_random_duration()
-				print(f"Virgin duration selected: ({new_duration[0]}, {new_duration[1]})")
+				print(f"LOG: Starting @ beat {new_measure.beats}")
+
+				if grouping[0]:
+					print(f'{grouping[0]}')
+					print(f"LOG: Grouping {grouping[0]} remaining 1/{grouping[1][0]} note durations: ")
+					new_duration = grouping[1]
+
+				# Dotted notes should be paired with next smallest
+				elif "." in previous_duration[0]:
+					print(f"LOG: Previous note {previous_duration[0]} is dotted, finding duration to pair to it")
+					for d in self.duration_list:
+						if previous_duration[1]/3 == d[1]:
+							new_duration = d
+							print(f"LOG: matching pair {d} selected")
+
+				else:
+					new_duration = self.get_random_duration()
+					print(f"Virgin duration selected: ({new_duration[0]}, {new_duration[1]})")
+
 				new_measure.beats += new_duration[1]
 
 				if new_measure.beats == new_measure.beats_per_measure:
@@ -67,11 +93,13 @@ class Rhythm:
 							new_measure.beats -= new_duration[1]
 							print("LOG: Measure overflow -- option 0: get different duration")
 							new_duration = self.get_random_duration(beat_limit=new_measure.beats_per_measure-new_measure.beats)
+							grouping = [0]
 
 						# Fill measure
 						elif roll == 1:
 							new_measure.beats -= new_duration[1]
 							self.complete_measure(new_measure, carryover=False)
+							grouping[0] = 0
 
 						# Carryover to a tied note in next measure
 						# Needs to do same as previous roll, but also provide tied_carryover_beats
@@ -82,7 +110,21 @@ class Rhythm:
 							self.complete_measure(new_measure, carryover=True)
 
 				else:
+					print(f"LOG: adding duration: {new_duration}")
 					new_measure.right_hand_pattern.append(new_duration[0])
+
+				# make this a method
+				if new_duration[0] in GROUPING_INTERVALS and grouping[0] == 0 and "." not in previous_duration:
+					print(f"DEBUG: grouping[0]: {grouping[0]}")
+					print(f"LOG: New duration in grouping list. Selecting grouping count for {new_duration[0]}")
+					grouping = [random.choices(GROUPING_LENGTHS, GROUPING_WEIGHTS[GROUPING_INTERVALS.index(new_duration[0])])[0], new_duration]
+					print(f"LOG: grouping size {grouping[0]} chosen")
+					print(f"DEBUG: grouping: {grouping}")
+
+				previous_duration = new_duration
+
+				if grouping[0]:
+					grouping[0] -= 1
 
 			self.pattern.append(new_measure)
 			print(f"LOG: {new_measure.beats} in measure {new_measure.number}. Adding it to pattern with right hand pattern: {new_measure.right_hand_pattern}: ")
@@ -102,12 +144,16 @@ class Rhythm:
 		for duration in self.duration_list:
 			print(f"LOG: Checking if {duration[1]} beats fits inside {carryover_beats} remaining beats")
 			if duration[1] <= carryover_beats:
+
 				print(f"LOG: {duration} found to fit ")
 				if tied == True:
 					measure.right_hand_pattern.append(duration[0]+"~")
 				else:
 					measure.right_hand_pattern.append(duration[0])
 				carryover_beats -= duration[1]
+
+			if not carryover_beats:
+				break
 		# Remove tie from last duration
 		if tied == True:
 			measure.right_hand_pattern[-1] = measure.right_hand_pattern[-1][:-1]
@@ -193,4 +239,4 @@ class Measure:
 
 if __name__ == "__main__":
 	rhythm = Rhythm(16, (3,4))
-	print(rhythm.display_right_hand_pattern)
+	print(rhythm.display_right_hand_pattern())
