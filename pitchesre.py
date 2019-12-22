@@ -129,5 +129,5 @@ class Notation:
 
 
 if __name__ == "__main__":
-	notation = Notation("ees", "major", test_rhythm.right_hand_pattern, 4, 1)
+	notation = Notation("cis", "major", test_rhythm.right_hand_pattern, 4, 1)
 	print(notation.right_hand_notation)

@@ -7,4 +7,6 @@ Output/
 *.pdf
 *.log
 
+reference.py
+
 Dlog.txt

@@ -1,0 +1,25 @@
+Misc Todos:
+Appropriate durations currently excludes durations longer than bpm. This isn't stricly necessary, but those durations 
+should probably be weighted down.
+
+If ties end up too numerous, can reduce occurences with a chance to select note that fits beat division
+A method that finds a fitting duration, such as a dotted note, and applies it
+
+Remove get_appropriate_durations, and get_weight_list from measure. Instead, Rhythm will keep passing the default values based on it's time signature,
+and detect when new ones need to be generated, such as for a time signature change. This way, Measure isn't doing it every instantiation
+
+User Preferences:
+
+Tempo
+Time Signature
+Keys
+Average duration size
+
+Extra exotics- time signature changes
+
+
+Design Decision notes:
+
+Compose method in rhythm will create measures 1 at a time, run fill_right_hand on each, and append. Then will loop through each measure and call 
+fill_left_hand from each. Or call right and left before each measure is appended. As left hand is based on right, and trends in right will get 
+reflected in left, even when left is generated measure by measure.
