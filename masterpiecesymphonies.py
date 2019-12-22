@@ -71,7 +71,7 @@ class App(tk.Tk):
 	def clear_fields(self):
 		self.title_entry.delete(0, 'end')
 		self.key_menu.selection_clear()
-		# Needs to reset OptionMenu's
+		# Needs to reset OptionMenu's. Haven't found the solution
 
 
 # create_ly(content, 'testttt')

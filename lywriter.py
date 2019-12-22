@@ -4,6 +4,9 @@ import pitchesre
 test_rhythm = durationsre.Rhythm(10, (4,4))
 
 
+class Ly:
+	def __init__(self, key,)
+
 def create_ly(content, file_name):
     file = open(f'{file_name}.ly', 'w')
     file.write(content)
