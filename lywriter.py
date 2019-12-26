@@ -5,7 +5,8 @@ test_rhythm = durationsre.Rhythm(10, (4,4))
 
 
 class Ly:
-	def __init__(self, key,)
+	def __init__(self, key):
+		pass
 
 def create_ly(content, file_name):
     file = open(f'{file_name}.ly', 'w')
@@ -14,14 +15,13 @@ def create_ly(content, file_name):
 
 
 def compose(total_beats):
-	rhythm = pitchesre.Notation("ees", "major", test_rhythm.right_hand_pattern, 4, 1)
+	rhythm = pitchesre.Notation("a", "major", test_rhythm.right_notation, None, None)
+	test_rhythm.display_right_hand_pattern()
 	composition = ""
-	for n in rhythm.right_hand_notation:
-		if "M" in n:
-			print(f"Not adding {n}")
-		elif "|" in n:
+	for n in rhythm.right_notation:
+		if "|" in n:
 			print(f"Adding {n}")
-			composition = composition + n
+			composition = composition + f'{n} '
 		else:
 			print(f"Adding {n}")
 			composition = composition + f'{n} '
@@ -60,7 +60,7 @@ lower = {
 } """
 
 print(right_hand)
-create_ly(content, 'test3')
+create_ly(content, 'test5')
 #
 # file = open('testly.ly', 'w')
 #

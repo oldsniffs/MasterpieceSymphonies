@@ -13,20 +13,20 @@ test_rhythm = durationsre.Rhythm(10, (4,4))
 
 class Notation:
 
-	def __init__(self, key, key_type, rhythm, accidental_rate, anchor_strength):
+	def __init__(self, key, key_type, right_rhythm, accidental_rate, anchor_strength):
 		self.key = key
 		self.key_type = key_type
 		self.scale_map = self.get_scale_map() # Only used in function map_scale
 		self.scale = self.map_scale()
 
-		self. right_rhythm = right_rhythm
+		self.right_rhythm = right_rhythm
 
 		self.accidental_rate = accidental_rate
 		self.anchor_strength = anchor_strength # Will control how much intervals run away from anchor point. Can influence interval weights
 
 		self.interval_weights = [6, 12, 12, 6, 4, 2, 1]
 
-		self.right_hand_notation = self.compose_right_hand()
+		self.right_notation = self.compose_right_hand()
 
 
 	def map_scale(self):
@@ -74,17 +74,14 @@ class Notation:
 
 		measure = 1
 		anchor_count = 1
-		anchor = self.scale.index(self.key)
+		anchor = self.scale.index(self.key+"'")
 		previous_note = anchor
 		previous_direction = None
 		tied_note = False
 
 		for d in self.right_rhythm:
 
-			if "M" in d:
-				continue
-
-			if d == "| ":
+			if d == "|":
 				right_hand_notation.append(d)
 				measure += 1
 				continue
