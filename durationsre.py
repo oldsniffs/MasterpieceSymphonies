@@ -31,12 +31,19 @@ class Rhythm:
 
 #(self, number, time_signature, all_durations, appropriate_durations, duration_weights, right_carryover_beats=0, left_carryover_beats=0, grouping=[]):
 		self.pattern = []
-		self.test_measure = Measure(1, self.time_signature, self.all_durations, self.appropriate_durations, self.whole_beat_durations, self.weights_list)
-		self.test_measure.display_right_hand()
 
 		self.fill_pattern()
 
 		self.right_notation = self.prepare_right_notation()
+		self.left_notation = self.prepare_left_notation()
+
+	def prepare_left_notation(self):
+		notation = []
+		for measure in self.pattern:
+			for beat in measure.left_hand_pattern:
+				for duration in beat:
+					notation.append(duration[0])
+		return notation
 
 	def prepare_right_notation(self):
 		notation = []
@@ -124,12 +131,9 @@ class Measure:
 		# Patterns are lists of beats, 1 per bpm, and beats are lists of durations
 		# Beat lists can be empty if previous duration is fully covering that beat
 		self.right_hand_pattern = []
-		self.right_carryover_beats = self.fill_right_hand(self.right_hand_pattern)
+		self.right_carryover_beats = self.fill_hand(self.right_hand_pattern, "right")
 		self.left_hand_pattern = []
-		self.left_carryover_beats = self.fill_left_hand(self.left_hand_pattern)
-
-	def fill_left_hand(self, pattern):
-		pass
+		self.left_carryover_beats = self.fill_hand(self.left_hand_pattern, "left")
 
 	def modify_weights_for_lh(self):
 		lh_weights = []
@@ -156,7 +160,8 @@ class Measure:
 
 	# For left hand, check each beat (or duration, by count) to see if right hand has a duration inserted. Roll a chance to copy that duration
 	# For left hand, run the weights through a modifier to weight towards longer durations
-	def fill_right_hand(self, pattern):
+	def fill_hand(self, pattern, hand):
+
 		if self.final_measure == True:
 			print(f"LOG: === FINAL MEASURE ===")
 		print(f"LOG: Starting fill of measure {self.number}, right hand pattern")
@@ -200,7 +205,7 @@ class Measure:
 
 			while count < 1:
 
-				virgin_duration = self.get_random_duration('right')
+				virgin_duration = self.get_random_duration(hand)
 				print(f"LOG: Virgin selected --> {virgin_duration} at count {count}")
 
 				if count + virgin_duration[1] <= 1:
@@ -311,5 +316,4 @@ class Measure:
 
 if __name__ == "__main__":
 	rhythm = Rhythm(16, (7,8))
-	print(rhythm.display_right_hand_pattern())
 	print(rhythm.right_notation)
