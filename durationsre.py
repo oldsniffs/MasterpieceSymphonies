@@ -43,14 +43,19 @@ class Rhythm:
 			for beat in measure.left_hand_pattern:
 				for duration in beat:
 					notation.append(duration[0])
+			notation.append("|")
 		return notation
 
 	def prepare_right_notation(self):
 		notation = []
+		m_count = 1
 		for measure in self.pattern:
+			notation.append(f"M{m_count}")
 			for beat in measure.right_hand_pattern:
 				for duration in beat:
 					notation.append(duration[0])
+			notation.append("|")
+			m_count += 1
 		return notation
 
 	def fill_pattern(self):
@@ -241,11 +246,11 @@ class Measure:
 
 		print(f"LOG: End of Measure reached. Returning {carryover_beats} carryover_beats OR converting {filled_beats} filled_beats for right_carryover_beats variable")
 
-		pattern[-1].append(("|", 0))
 		carryover_beats += filled_beats
 
 		if self.final_measure == True and carryover_beats:
 			self.remove_tie_if_final(pattern)
+			pattern[-1].append(("|", 0))
 
 		return carryover_beats
 

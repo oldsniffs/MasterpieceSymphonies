@@ -28,6 +28,7 @@ class Notation:
 		print(f"DEBUG: rh_notes: {self.rh_notes}")
 
 		self.right_rhythm = rhythm.right_notation
+		print(f"DEBUG: rhythm.right_notation {rhythm.right_notation}")
 
 		self.accidental_rate = accidental_rate
 		self.anchor_strength = anchor_strength # Will control how much intervals run away from anchor point. Can influence interval weights
@@ -132,6 +133,9 @@ class Notation:
 		tied_note = False
 
 		for d in self.right_rhythm:
+
+			if "M" in d:
+				continue
 
 			if d == "|":
 				right_hand_notation.append(d)

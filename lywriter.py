@@ -60,10 +60,11 @@ lower = {
 } """
 
 print(right_hand)
-create_ly(content, 'test6')
+create_ly(content, 'test7')
 #
 # file = open('testly.ly', 'w')
 #
 # file.write(content)
 # file.close
 
+print(f"DEBUG: {pitchesre.RH_LIMITS}")
