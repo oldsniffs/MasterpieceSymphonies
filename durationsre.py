@@ -1,7 +1,7 @@
 import random
 
-ALL_DURATION_NOTATIONS = ['1.', '1', '2.', '2', '4.', '4', '8.', '8', '16.', '16', '32', '32.', '64']
-DURATION_WEIGHTS = [('1.', 3), ('1', 12), ('2.', 6), ('2', 18), ('4.', 8), ('4', 25), ('8.', 8), ('8', 20), ('16.', 6), ('16', 12), ('32.', 6), ('32', 2), ('64', 2)]
+ALL_DURATION_NOTATIONS = ['1.', '1', '2.', '2', '4.', '4', '8.', '8', '16.', '16', '32.', '32', '64']
+DURATION_WEIGHTS = [(6, 3), (4, 8), (3, 6), (2, 18), (1.5, 8), (1, 25), (.75, 8), (.5, 20), (.375, 6), (.25, 12), (.1875, 2), (.125, 6), (.0625, 2)]
 
 FILLER_ONLY_DURATIONS = ['1..', '2..', '4..', '8..', '16..', '32..', '64..'] # God forbid 64.. is ever used
 
@@ -104,7 +104,6 @@ class Rhythm:
 			else:
 				base_value = 1/int(d)
 				beat_value = base_value * self.time_signature[1]
-
 			beat_values.append((d, beat_value))
 		
 		return beat_values
@@ -113,7 +112,7 @@ class Rhythm:
 	# Does time signature matter? Are 1/8 notes more common in 6/8 than 3/4?
 	# Should large notes be left appropriate, and allowed to form long tied carryovers? -> Yes, but weight should drop
 	def get_weights(self):
-		return [weight[1] for weight in [dw for dw in DURATION_WEIGHTS if dw[0] in [d[0] for d in self.appropriate_durations]]]
+		return [weight[1] for weight in [dw for dw in DURATION_WEIGHTS if dw[0] in [d[1] for d in self.appropriate_durations]]]
 
 
 class Measure:
