@@ -130,6 +130,7 @@ class Notation:
 		anchor = self.rh_notes.index(self.key+"'")+2
 		previous_note = anchor
 		previous_direction = None
+		span = 0
 		tied_note = False
 
 		for d in self.right_rhythm:
@@ -151,7 +152,7 @@ class Notation:
 
 			# if for rests. Different duration rules for rests?
 
-			current_direction = self.set_direction(previous_direction, (anchor-previous_note)^2)
+			current_direction, span = self.set_direction(previous_direction, abs(anchor-previous_note), span)
 			print(f"LOG: rolling new pitch in measure {measure} with interval {interval} from previous note index {previous_note} in direction {current_direction}")
 			print(f"LOG: index for p should be: {previous_note+(interval*current_direction)}")
 			try:
@@ -171,21 +172,29 @@ class Notation:
 
 	# Base this on -- previous direction(+), distance from anchor(farther away, likelier to return)
 	# and sequence. Give a chance to boost odds to continue in current direction for a number of pitches.
-	def set_direction(self, current_direction, distance_from_anchor):
+	def set_direction(self, current_direction, distance_from_anchor, span):
 		if not current_direction:
-			return random.choice([1, -1])
+			return random.choice([1, -1]), 1
 
-		base = 0 + int(distance_from_anchor/2)
+		base = 0 + int(distance_from_anchor/3) + span
 		flip = False
-		if random.randint(base, 14) > 9:
+
+		if base > 14:
 			flip = True
-		if not flip:
-			return current_direction
-		else:
+		elif random.randint(base, 14) > 9:
+			flip = True
+			span = 0
+		
+		if flip:
 			if current_direction == 1:
-				return -1
+				new_direction = -1
 			else:
-				return 1
+				new_direction = 1
+		else:
+			new_direction = current_direction
+			span += 1
+
+		return new_direction, span
 
 
 if __name__ == "__main__":
