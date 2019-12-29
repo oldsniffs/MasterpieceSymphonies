@@ -4,6 +4,7 @@ ALL_DURATION_NOTATIONS = ['1.', '1', '2.', '2', '4.', '4', '8.', '8', '16.', '16
 DURATION_WEIGHTS = [(6, 2), (4, 6), (3, 5), (2, 16), (1.5, 8), (1, 25), (.75, 8), (.5, 20), (.375, 6), (.25, 12), (.1875, 2), (.125, 5), (.0625, 1)]
 
 FILLER_ONLY_DURATIONS = ['1..', '2..', '4..', '8..', '16..', '32..', '64..'] # God forbid 64.. is ever used
+LH_MODIFIER = 1.6
 
 PAIRING_DURATIONS = [.5, .25, .125, .0625]
 PAIRING_LENGTHS = [1, 2, 3, 4, 5]
@@ -30,49 +31,45 @@ class Rhythm:
 		self.weights_list = self.get_weights()
 		print(f"DISPLAYING self.weights_list: {self.weights_list}\n")
 
-#(self, number, time_signature, all_durations, appropriate_durations, duration_weights, right_carryover_beats=0, left_carryover_beats=0, pairing=[]):
 		self.pattern = []
 
 		self.fill_pattern()
 
-		self.right_notation = self.prepare_right_notation()
-		self.left_notation = self.prepare_left_notation()
+		self.left_notation, self.right_notation = self.prepare_notation()
 
-	def prepare_left_notation(self):
-		notation = []
-		for measure in self.pattern:
-			for beat in measure.left_hand_pattern:
-				for duration in beat:
-					notation.append(duration[0])
-			notation.append("|")
-		return notation
-
-	def prepare_right_notation(self):
-		notation = []
+	def prepare_notation(self):
+		left_notation = []
+		right_notation = []
 		m_count = 1
 		for measure in self.pattern:
-			notation.append(f"M{m_count}")
-			for beat in measure.right_hand_pattern:
+			right_notation.append(f"M{m_count}")
+			left_notation.append(f"M{m_count}")
+			for beat in measure.right_hand["pattern"]:
 				for duration in beat:
-					notation.append(duration[0][0])
-			notation.append("|")
+					right_notation.append(duration[0][0])
+			for beat in measure.left_hand["pattern"]:
+				for duration in beat:
+					left_notation.append(duration[0][0])
+			right_notation.append("|")
+			left_notation.append("|")
 			m_count += 1
-		return notation
+		return left_notation, right_notation
 
 	def fill_pattern(self):
 		right_carryover = 0
 		left_carryover = 0
-		pairing = []
+		right_pairing = []
 		final_measure = False
 
 		for measure in range(self.measures):
 			if measure+1 == self.measures:
 				final_measure = True
 
-			self.pattern.append(Measure(measure+1, self.time_signature, self.all_durations, self.appropriate_durations, self.whole_beat_durations, self.weights_list, right_carryover_beats=right_carryover, left_carryover_beats=left_carryover, pairing=pairing, final_measure=final_measure))
+			self.pattern.append(Measure(measure+1, self.time_signature, self.all_durations, self.appropriate_durations, self.whole_beat_durations, self.weights_list, right_carryover=right_carryover, left_carryover=left_carryover, right_pairing=right_pairing, final_measure=final_measure))
 
-			right_carryover = self.pattern[-1].right_carryover_beats
-			pairing = self.pattern[-1].leftover_pairing
+			# Should just pass the previous measure, new measure can unpack all this at init
+			right_carryover, right_pairing = self.pattern[-1].right_hand["overflow"], self.pattern[-1].right_hand["leftover_pairing"]
+			left_carryover, left_pairing = self.pattern[-1].left_hand["overflow"], self.pattern[-1].left_hand["leftover_pairing"]
 
 	def display_right_hand_pattern(self):
 		rh_display = ""
@@ -118,7 +115,7 @@ class Rhythm:
 
 
 class Measure:
-	def __init__(self, number, time_signature, all_durations, appropriate_durations, whole_beat_durations, duration_weights, right_carryover_beats=0, left_carryover_beats=0, pairing=[], final_measure=False):
+	def __init__(self, number, time_signature, all_durations, appropriate_durations, whole_beat_durations, duration_weights, right_carryover=0, left_carryover=0, right_pairing=[], left_pairing=[], final_measure=False):
 		# measure number not necessary, but used to help debugging
 		self.number = number
 		self.time_signature = time_signature
@@ -128,52 +125,49 @@ class Measure:
 		self.all_durations = all_durations
 		self.appropriate_durations = appropriate_durations
 		self.whole_beat_durations = whole_beat_durations
-		self.right_duration_weights = duration_weights
-		self.left_duration_weights = self.modify_weights_for_lh()
-
-		self.right_carryover_beats = right_carryover_beats
-		self.pairing = pairing
-		self.leftover_pairing = []
 
 		# Patterns are lists of beats, 1 per bpm, and beats are lists of durations
 		# Beat lists can be empty if previous duration is fully covering that beat
-		self.right_hand_pattern = []
-		self.right_carryover_beats = self.fill_hand(self.right_hand_pattern, "right")
-		self.left_hand_pattern = []
-		self.left_carryover_beats = self.fill_hand(self.left_hand_pattern, "left")
+		# "hand" Dictionaries contain: side, pattern: carryover, pairing, list of beats (old pattern), weights, overflow, leftover pairing
+		self.right_hand = {"side": "right", "carryover": right_carryover, "pairing": right_pairing, "pattern": [], "duration_weights": duration_weights}
+		self.right_hand["overflow"], self.right_hand["leftover_pairing"] = self.fill_hand(self.right_hand)
+		
+		self.left_hand = {"side": "left", "carryover": left_carryover, "pairing": left_pairing, "pattern": [], "duration_weights": self.modify_weights_for_lh()}
+		self.left_hand["overflow"], self.left_hand["leftover_pairing"] = self.fill_hand(self.left_hand)
 
 	def modify_weights_for_lh(self):
 		lh_weights = []
-		midpoint = int(len(self.right_duration_weights)/2)
+		midpoint = int(len(self.right_hand["duration_weights"])/2)
 		modifier = 1
-		for i in range(len(self.right_duration_weights)):
+		for i in range(len(self.right_hand["duration_weights"])):
 			if i < midpoint:
-				modifier = 1.5
-			lh_weights.append(self.right_duration_weights[i]*modifier)
+				modifier = LH_MODIFIER
+			lh_weights.append(self.right_hand["duration_weights"][i]*modifier)
 		return lh_weights
 
 	def display_right_hand(self):
-		for b in self.right_hand_pattern:
+		for b in self.right_hand["pattern"]:
 			count = 0
 			for d in [d for d in b if d[0] != "|"]:
 				print(f"{d[0]}", end=" ")
 				count += d[1]
 			print(f" /  --> {count}")
-		print(f"Overflow beats: {self.right_carryover_beats}")
+		print(f'Overflow beats: {self.right_hand["overflow"]}')
 
 	def get_carryovers(self):
-		return right_carryover_beats, left_carryover_beats
-
+		return right_carryover, left_carryover
 
 	# For left hand, check each beat (or duration, by count) to see if right hand has a duration inserted. Roll a chance to copy that duration
 	# For left hand, run the weights through a modifier to weight towards longer durations
-	def fill_hand(self, pattern, hand):
+	def fill_hand(self, hand):
 
 		if self.final_measure == True:
 			print(f"LOG: === FINAL MEASURE ===")
 		print(f"LOG: Starting fill of measure {self.number}, right hand pattern")
-		pairing = self.pairing
-		carryover_beats = self.right_carryover_beats
+
+		pattern = hand["pattern"]
+		pairing = hand["pairing"]
+		carryover = hand["carryover"]
 		filled_beats = 0
 
 		for beat in range(self.beats_per_measure):
@@ -182,7 +176,7 @@ class Measure:
 
 			# Not sure why there's a why condition for this LOG
 			if beat > 0:
-				print(f"LOG: Starting beat {beat+1} with {carryover_beats} carryover_beats and {filled_beats} filled beats. Count reset to {count}")
+				print(f"LOG: Starting beat {beat+1} with {carryover} carryover and {filled_beats} filled beats. Count reset to {count}")
 
 			if filled_beats:
 				print(f"LOG (filled_beats): {filled_beats} filled_beats left. Appending empty beat list")
@@ -192,22 +186,22 @@ class Measure:
 				continue
 		
 			# Change to elif?
-			if carryover_beats:
+			if carryover:
 
-				if carryover_beats < 1:
-					new_duration, carryover_count = self.fill_small_carryover(carryover_beats, new_beat)
+				if carryover < 1:
+					new_duration, carryover_count = self.fill_small_carryover(carryover, new_beat)
 					count += carryover_count
-					carryover_beats -= new_duration[1]	
+					carryover -= new_duration[1]	
 
 				else:
-					print(f"LOG: Carryover {carryover_beats} >= 1")
-					biggest_whole = float(int(carryover_beats))
+					print(f"LOG: Carryover {carryover} >= 1")
+					biggest_whole = float(int(carryover))
 					new_duration, whole_carryover = self.get_filled_beats_spawn(biggest_whole, pattern)
-					carryover_beats -= new_duration[1]
+					carryover -= new_duration[1]
 					filled_beats = new_duration[1]-1
-					if carryover_beats:
+					if carryover:
 						new_duration = (new_duration[0]+"~", new_duration[1])
-					print(f"LOG: Carryover {carryover_beats} filled {filled_beats}")
+					print(f"LOG: Carryover {carryover} filled {filled_beats}")
 
 				print(f"LOG: Appending new_duration {new_duration} to new_beat at count {count}")
 				new_beat.append(((new_duration), count))
@@ -228,7 +222,7 @@ class Measure:
 					count += new_duration[1]
 					continue
 
-				virgin_duration = self.get_random_duration(hand)
+				virgin_duration = self.get_random_duration(hand["duration_weights"])
 				print(f"LOG: Virgin selected --> {virgin_duration} at count {count}")
 
 				if count + virgin_duration[1] <= 1:
@@ -244,14 +238,14 @@ class Measure:
 							break
 						elif duration[1] < virgin_duration[1]:
 							new_duration = duration
-							carryover_beats = virgin_duration[1] - new_duration[1]
+							carryover = virgin_duration[1] - new_duration[1]
 							filled_beats = new_duration[1]-1
-							print(f"LOG(<): {duration} selected as biggest available whole beat duration. Carryover: {carryover_beats}")
+							print(f"LOG(<): {duration} selected as biggest available whole beat duration. Carryover: {carryover}")
 
 				else:
 					print(f"LOG: Virgin OVERFLOWS by {virgin_duration[1]-(1-count)}")
 					new_duration = self.complete_beat(1-count, new_beat, count)
-					carryover_beats = virgin_duration[1]-(1-count)
+					carryover = virgin_duration[1]-(1-count)
 					count += (1-count)-new_duration[1]
 
 				print(f"LOG: Appending new_duration {new_duration} to new_beat at count {count}")
@@ -261,19 +255,19 @@ class Measure:
 
 			# If final measure, and we have overflow, remove tie
 
-			print(f"LOG: Count {count} reached for beat {len(pattern)+1}. Appending to right_hand_pattern with {filled_beats} filled_beats and {carryover_beats} carryover_beats")
+			print(f"LOG: Count {count} reached for beat {len(pattern)+1}. Appending to right_hand_pattern with {filled_beats} filled_beats and {carryover} carryover")
 			pattern.append(new_beat)
 
-		print(f"LOG: End of Measure reached. Returning {carryover_beats} carryover_beats OR converting {filled_beats} filled_beats for right_carryover_beats variable")
+		print(f"LOG: End of Measure reached. Returning {carryover} carryover OR converting {filled_beats} filled_beats for right_carryover variable")
 
-		carryover_beats += filled_beats
+		carryover += filled_beats
 
-		if self.final_measure == True and carryover_beats:
+		if self.final_measure == True and carryover:
 			self.remove_tie_if_final(pattern)
 			pattern[-1].append(("|", 0))
-			self.leftover_pairing = pairing
+			pairing
 
-		return carryover_beats
+		return carryover, pairing
 
 	# Returns pairing list. empty if none
 	def check_pairing(self, duration, count):
@@ -334,10 +328,10 @@ class Measure:
 				remaining_beats -= duration[1]
 				count += duration[1]
 
-	def fill_small_carryover(self, carryover_beats, pattern):
+	def fill_small_carryover(self, carryover, pattern):
 
-		print(f"LOG(fill_small_carryover): Filling carryover at beat {len(pattern)+1} starting with {carryover_beats} carryover beats. Attempting to fill")
-		remaining_beats = carryover_beats
+		print(f"LOG(fill_small_carryover): Filling carryover at beat {len(pattern)+1} starting with {carryover} carryover beats. Attempting to fill")
+		remaining_beats = carryover
 		count = 0
 
 		for duration in self.all_durations:
@@ -351,11 +345,8 @@ class Measure:
 				remaining_beats -= duration[1]
 				count += duration[1]
 
-	def get_random_duration(self, hand, beat_limit=None):
-		if hand == 'right':
-			weights = self.right_duration_weights
-		else:
-			weights = self.left_duration_weights
+	def get_random_duration(self, weights, beat_limit=None):
+
 		if not beat_limit:
 			return random.choices(self.appropriate_durations, weights)[0]
 		else:
