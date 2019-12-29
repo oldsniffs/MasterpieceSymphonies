@@ -16,7 +16,7 @@ INTERVALS = [1, 2, 3, 4, 5, 6, 7]
 
 class Notation:
 
-	def __init__(self, key, key_type, right_limits, left_limits, rhythm, accidental_rate, anchor_strength):
+	def __init__(self, key, key_type, right_limits, left_limits, rhythm, accidental_freq, rest_freq, anchor_strength):
 		self.key = key
 		self.key_type = key_type
 		self.base_list = self.get_base_list
@@ -30,7 +30,8 @@ class Notation:
 		self.right_rhythm = rhythm.right_notation
 		print(f"DEBUG: rhythm.right_notation {rhythm.right_notation}")
 
-		self.accidental_rate = accidental_rate
+		self.accidental_freq = accidental_freq
+		self.rest_freq = rest_freq
 		self.anchor_strength = anchor_strength # Will control how much intervals run away from anchor point. Can influence interval weights
 
 		self.interval_weights = [12, 14, 10, 4, 3, 2, 1]
@@ -127,7 +128,7 @@ class Notation:
 
 		measure = 1
 		anchor_count = 1
-		anchor = self.rh_notes.index(self.key+"'")+2
+		anchor = self.rh_notes.index(self.key+"'")
 		previous_note = anchor
 		previous_direction = None
 		span = 0
@@ -152,7 +153,7 @@ class Notation:
 
 			# if for rests. Different duration rules for rests?
 
-			current_direction, span = self.set_direction(previous_direction, abs(anchor-previous_note), span)
+			current_direction, span = self.set_direction(previous_direction, previous_note-anchor, span)
 			print(f"LOG: rolling new pitch in measure {measure} with interval {interval} from previous note index {previous_note} in direction {current_direction}")
 			print(f"LOG: index for p should be: {previous_note+(interval*current_direction)}")
 			try:
@@ -170,20 +171,23 @@ class Notation:
 
 		return right_hand_notation
 
-	# Base this on -- previous direction(+), distance from anchor(farther away, likelier to return)
-	# and sequence. Give a chance to boost odds to continue in current direction for a number of pitches.
 	def set_direction(self, current_direction, distance_from_anchor, span):
 		if not current_direction:
 			return random.choice([1, -1]), 1
 
-		base = 0 + int(distance_from_anchor/3) + span
+		anchor_weight = self.weigh_anchor(distance_from_anchor, current_direction)
+
+		base = anchor_weight + span
 		flip = False
 
 		if base > 14:
 			flip = True
-		elif random.randint(base, 14) > 9:
-			flip = True
-			span = 0
+		
+		else: 
+			print(f"LOG(set_direction): Rolling for flip with base = anchor_weight + span: {anchor_weight} + {span} = {base}")
+			if random.randint(base, 14) > 9:
+				flip = True
+				span = 0
 		
 		if flip:
 			if current_direction == 1:
@@ -193,12 +197,18 @@ class Notation:
 		else:
 			new_direction = current_direction
 			span += 1
-
 		return new_direction, span
 
+	def weigh_anchor(self, distance_from_anchor, current_direction):
+		anchor_weight = 0
+		if abs(distance_from_anchor) > 7: # Point at which distance weights flip roll
+			if (distance_from_anchor < 0 and current_direction == -1) or (distance_from_anchor > 0 and current_direction == 1):
+				anchor_weight = int(abs(distance_from_anchor)/3)
+				print(f"LOG(weight_anchor): Anchor weighing in at abs(distance_from_anchor): abs({distance_from_anchor}) /3 rounded down: {anchor_weight}")
+		return anchor_weight
 
 if __name__ == "__main__":
-	notation = Notation("d", 'major', RH_LIMITS, LH_LIMITS, durationsre.Rhythm(10, (4,4)), 0, 0)
+	notation = Notation("d", 'major', RH_LIMITS, LH_LIMITS, durationsre.Rhythm(10, (4,4)), 0, 1, 0)
 	print(f"LOG: rh_notes: {notation.rh_notes}")
 	print(notation.scale)
 	print(notation.right_notation)

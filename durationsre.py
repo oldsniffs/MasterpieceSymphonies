@@ -1,13 +1,14 @@
 import random
 
 ALL_DURATION_NOTATIONS = ['1.', '1', '2.', '2', '4.', '4', '8.', '8', '16.', '16', '32.', '32', '64']
-DURATION_WEIGHTS = [(6, 3), (4, 8), (3, 6), (2, 18), (1.5, 8), (1, 25), (.75, 8), (.5, 20), (.375, 6), (.25, 12), (.1875, 2), (.125, 6), (.0625, 2)]
+DURATION_WEIGHTS = [(6, 2), (4, 6), (3, 5), (2, 16), (1.5, 8), (1, 25), (.75, 8), (.5, 20), (.375, 6), (.25, 12), (.1875, 2), (.125, 5), (.0625, 1)]
 
 FILLER_ONLY_DURATIONS = ['1..', '2..', '4..', '8..', '16..', '32..', '64..'] # God forbid 64.. is ever used
 
-GROUPING_DURATIONS = ["4", "8", "16", "32"]
-GROUPING_LENGTHS = [1, 2, 3, 4, 5]
-GROUPING_WEIGHTS = [[16, 3, 1, 0, 0], [0, 4, 2, 1, 0], [0, 4, 4, 2, 1], [0, 6, 4, 4, 2]]
+PAIRING_DURATIONS = [.5, .25, .125, .0625]
+PAIRING_LENGTHS = [1, 2, 3, 4, 5]
+# Weights: [(chance/10 of pairing[length weights])]
+PAIRING_WEIGHTS = [(2, [6, 2, 1, 0, 0]), (4, [1, 4, 2, 1, 0]), (9, [2, 6, 4, 2, 1]), (9, [2, 6, 4, 2, 2])]
 
 
 # Placeholders for user defined variables:
@@ -29,7 +30,7 @@ class Rhythm:
 		self.weights_list = self.get_weights()
 		print(f"DISPLAYING self.weights_list: {self.weights_list}\n")
 
-#(self, number, time_signature, all_durations, appropriate_durations, duration_weights, right_carryover_beats=0, left_carryover_beats=0, grouping=[]):
+#(self, number, time_signature, all_durations, appropriate_durations, duration_weights, right_carryover_beats=0, left_carryover_beats=0, pairing=[]):
 		self.pattern = []
 
 		self.fill_pattern()
@@ -53,7 +54,7 @@ class Rhythm:
 			notation.append(f"M{m_count}")
 			for beat in measure.right_hand_pattern:
 				for duration in beat:
-					notation.append(duration[0])
+					notation.append(duration[0][0])
 			notation.append("|")
 			m_count += 1
 		return notation
@@ -61,16 +62,17 @@ class Rhythm:
 	def fill_pattern(self):
 		right_carryover = 0
 		left_carryover = 0
-		grouping = []
+		pairing = []
 		final_measure = False
 
 		for measure in range(self.measures):
 			if measure+1 == self.measures:
 				final_measure = True
 
-			self.pattern.append(Measure(measure+1, self.time_signature, self.all_durations, self.appropriate_durations, self.whole_beat_durations, self.weights_list, right_carryover_beats=right_carryover, left_carryover_beats=left_carryover, grouping=grouping, final_measure=final_measure))
-			
+			self.pattern.append(Measure(measure+1, self.time_signature, self.all_durations, self.appropriate_durations, self.whole_beat_durations, self.weights_list, right_carryover_beats=right_carryover, left_carryover_beats=left_carryover, pairing=pairing, final_measure=final_measure))
+
 			right_carryover = self.pattern[-1].right_carryover_beats
+			pairing = self.pattern[-1].leftover_pairing
 
 	def display_right_hand_pattern(self):
 		rh_display = ""
@@ -116,7 +118,7 @@ class Rhythm:
 
 
 class Measure:
-	def __init__(self, number, time_signature, all_durations, appropriate_durations, whole_beat_durations, duration_weights, right_carryover_beats=0, left_carryover_beats=0, grouping=[], final_measure=False):
+	def __init__(self, number, time_signature, all_durations, appropriate_durations, whole_beat_durations, duration_weights, right_carryover_beats=0, left_carryover_beats=0, pairing=[], final_measure=False):
 		# measure number not necessary, but used to help debugging
 		self.number = number
 		self.time_signature = time_signature
@@ -130,7 +132,8 @@ class Measure:
 		self.left_duration_weights = self.modify_weights_for_lh()
 
 		self.right_carryover_beats = right_carryover_beats
-		self.grouping = grouping
+		self.pairing = pairing
+		self.leftover_pairing = []
 
 		# Patterns are lists of beats, 1 per bpm, and beats are lists of durations
 		# Beat lists can be empty if previous duration is fully covering that beat
@@ -169,13 +172,15 @@ class Measure:
 		if self.final_measure == True:
 			print(f"LOG: === FINAL MEASURE ===")
 		print(f"LOG: Starting fill of measure {self.number}, right hand pattern")
-		grouping = self.grouping
+		pairing = self.pairing
 		carryover_beats = self.right_carryover_beats
 		filled_beats = 0
 
 		for beat in range(self.beats_per_measure):
 			new_beat = []
 			count = 0 # Floatable beat count within beat
+
+			# Not sure why there's a why condition for this LOG
 			if beat > 0:
 				print(f"LOG: Starting beat {beat+1} with {carryover_beats} carryover_beats and {filled_beats} filled beats. Count reset to {count}")
 
@@ -186,6 +191,7 @@ class Measure:
 				filled_beats -= 1
 				continue
 		
+			# Change to elif?
 			if carryover_beats:
 
 				if carryover_beats < 1:
@@ -204,16 +210,30 @@ class Measure:
 					print(f"LOG: Carryover {carryover_beats} filled {filled_beats}")
 
 				print(f"LOG: Appending new_duration {new_duration} to new_beat at count {count}")
-				new_beat.append(new_duration)
+				new_beat.append(((new_duration), count))
 				count+=new_duration[1]
 
 			while count < 1:
+
+				if pairing:
+					print(f"LOG: Pairing detected: {pairing}")
+					new_duration = pairing[0]
+					pairing[1] -= 1
+					# Count is over, clear list
+					if not pairing[1]:
+						print("LOG: End of pairing")
+						pairing = []
+					print(f"LOG: Appending PAIRED new_duration {new_duration} to new_beat at beat count {count}")
+					new_beat.append(((new_duration), count))
+					count += new_duration[1]
+					continue
 
 				virgin_duration = self.get_random_duration(hand)
 				print(f"LOG: Virgin selected --> {virgin_duration} at count {count}")
 
 				if count + virgin_duration[1] <= 1:
 					new_duration = virgin_duration
+					pairing = self.check_pairing(new_duration, count)
 
 				elif count == 0 and virgin_duration[1] % 1 == 0:
 					for duration in [d for d in self.whole_beat_durations if d[1] + len(pattern) <= self.beats_per_measure]:
@@ -230,12 +250,13 @@ class Measure:
 
 				else:
 					print(f"LOG: Virgin OVERFLOWS by {virgin_duration[1]-(1-count)}")
-					new_duration = self.complete_beat(1-count, new_beat) 
+					new_duration = self.complete_beat(1-count, new_beat, count)
 					carryover_beats = virgin_duration[1]-(1-count)
 					count += (1-count)-new_duration[1]
 
 				print(f"LOG: Appending new_duration {new_duration} to new_beat at count {count}")
-				new_beat.append(new_duration)
+				new_beat.append(((new_duration), count))
+
 				count+=new_duration[1]
 
 			# If final measure, and we have overflow, remove tie
@@ -250,8 +271,37 @@ class Measure:
 		if self.final_measure == True and carryover_beats:
 			self.remove_tie_if_final(pattern)
 			pattern[-1].append(("|", 0))
+			self.leftover_pairing = pairing
 
 		return carryover_beats
+
+	# Returns pairing list. empty if none
+	def check_pairing(self, duration, count):
+		if duration[1] not in PAIRING_DURATIONS:
+			return []
+		
+		# check if its on strong beat or beat subdivision
+		if self.check_beat_strength(duration, count) == True:
+			pairing = self.get_pairing(duration)
+			print(f"LOG(check_pairing): Pairing {pairing} created. Returning")
+			return pairing
+
+
+	def check_beat_strength(self, duration, count):
+		print(f"LOG(check_beat_strength): Checking if a duration {duration} on count {count} is strong")
+		if (count/duration[1]) % 2 == 0:
+			print(f"LOG(check_beat_strength): STRONG")
+			return True
+		# Might not need this else
+		else:
+			print(f"LOG(check_beat_strength): WEAK")
+			return False
+
+	def get_pairing(self, duration):
+		print(f"LOG(get_pairing): Getting pairing for {duration}")
+		weights = PAIRING_WEIGHTS[PAIRING_DURATIONS.index(duration[1])]
+		if random.randint(1, 10) < weights[0]:
+			return [duration, random.choices(PAIRING_LENGTHS, weights[1])[0]]
 
 	def remove_tie_if_final(self, pattern):
 		for i in range(len(pattern)-1, 0, -1):
@@ -272,7 +322,7 @@ class Measure:
 			if duration[1] == beat_value:
 				return duration
 
-	def complete_beat(self, remaining_beats, pattern):
+	def complete_beat(self, remaining_beats, pattern, count):
 		print(f"LOG(complete_beat): Completing beat, {remaining_beats} beats remaining")
 		for duration in self.all_durations:
 			if duration[1] == remaining_beats:
@@ -280,8 +330,9 @@ class Measure:
 				return (duration[0]+"~", duration[1])
 			elif duration[1] < remaining_beats:
 				print(f"LOG(complete_beat): appending {duration} towards {remaining_beats} remaining_beats")
-				pattern.append((duration[0]+"~", duration[1]))
+				pattern.append(((duration[0]+"~", duration[1]), count))
 				remaining_beats -= duration[1]
+				count += duration[1]
 
 	def fill_small_carryover(self, carryover_beats, pattern):
 
@@ -290,14 +341,13 @@ class Measure:
 		count = 0
 
 		for duration in self.all_durations:
-			print(f"LOG(fill_small_carryover: Checking {duration} with {remaining_beats} beats remaining to fill")
 			if duration[1] == remaining_beats:
 				print(f"LOG(fill_small_carryover) {duration} matches {remaining_beats} remaining_beats. Returning")
 				return (duration[0], duration[1]), count
 			elif duration[1] < remaining_beats:
 				# if self.time_signature[1] % duration[1]
 				print(f"LOG(fill_small_carryover): {duration} found to fit in {remaining_beats}. Appending. {remaining_beats-duration[1]} beats remaining")
-				pattern.append((duration[0]+"~", duration[1]))
+				pattern.append(((duration[0]+"~", duration[1]), count))
 				remaining_beats -= duration[1]
 				count += duration[1]
 

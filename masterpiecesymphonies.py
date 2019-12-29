@@ -1,6 +1,6 @@
 import tkinter as tk
-# from lywriter import create_ly
 import subprocess
+from lywriter import *
 
 
 KEYS = ["C", "G", "D", "A", "E", "B"]

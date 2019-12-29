@@ -5,7 +5,7 @@ test_rhythm = durationsre.Rhythm(12, (4,4))
 
 
 class Ly:
-	def __init__(self, key):
+	def __init__(self, key, key_type, time_signature, left_limits, right_limits):
 		pass
 
 def create_ly(content, file_name):
@@ -15,7 +15,7 @@ def create_ly(content, file_name):
 
 
 def compose(total_beats):
-	notation = pitchesre.Notation("a", "major",['g', "c'''''"], pitchesre.LH_LIMITS, test_rhythm, None, None)
+	notation = pitchesre.Notation("a", "major",['g', "c'''''"], pitchesre.LH_LIMITS, test_rhythm, None, 1, None)
 	test_rhythm.display_right_hand_pattern()
 	composition = ""
 	for n in notation.right_notation:
@@ -60,11 +60,9 @@ lower = {
 } """
 
 print(right_hand)
-create_ly(content, 'test7')
+create_ly(content, 'test8')
 #
 # file = open('testly.ly', 'w')
 #
 # file.write(content)
 # file.close
-
-print(f"DEBUG: {pitchesre.RH_LIMITS}")
