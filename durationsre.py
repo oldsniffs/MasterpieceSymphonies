@@ -7,10 +7,13 @@ FILLER_ONLY_DURATIONS = ['1..', '2..', '4..', '8..', '16..', '32..', '64..'] # G
 LH_MODIFIER = 1.6
 
 PAIRING_DURATIONS = [.5, .25, .125, .0625]
-PAIRING_LENGTHS = [1, 2, 3, 4, 5]
+PAIRING_LENGTHS = [1, 2, 3, 4, 5, 6, 7]
 # Weights: [(chance/10 of pairing[length weights])]
-PAIRING_WEIGHTS = [(2, [6, 2, 1, 0, 0]), (4, [1, 4, 2, 1, 0]), (9, [2, 6, 4, 2, 1]), (9, [2, 6, 4, 2, 2])]
+PAIRING_WEIGHTS_OLD = [(2, [6, 2, 1, 0, 0, 0, 0]), (4, [1, 4, 2, 1, 0, 0, 0]), (9, [2, 6, 4, 2, 1, ]), (9, [2, 6, 4, 2, 2])]
+PAIRING_WEIGHTS = [(2, [6, 2, 4, 1, 2, 0, 0]), (4, [7, 3, 5, 2, 1, 0, 0]), (9, [8, 4, 6, 3, 3, 1, 0]), (9, [10, 5, 8, 4, 6, 3, 2])]
 
+
+SYNCING_THRESHOLD = 4
 
 # Placeholders for user defined variables:
 MEASURES = 16
@@ -72,9 +75,10 @@ class Rhythm:
 			left_carryover, left_pairing = self.pattern[-1].left_hand["overflow"], self.pattern[-1].left_hand["leftover_pairing"]
 
 	def display_right_hand_pattern(self):
-		rh_display = ""
 		for measure in self.pattern:
+			print(f"Measure {measure.number}")
 			measure.display_right_hand()
+			print(f"{measure.number} of {len(self.pattern)} printed")
 
 	def get_all_durations(self):
 		beat_values = self.generate_beat_value_list()
@@ -133,6 +137,7 @@ class Measure:
 		self.right_hand["overflow"], self.right_hand["leftover_pairing"] = self.fill_hand(self.right_hand)
 		
 		self.left_hand = {"side": "left", "carryover": left_carryover, "pairing": left_pairing, "pattern": [], "duration_weights": self.modify_weights_for_lh()}
+		self.syncs = self.get_syncs()
 		self.left_hand["overflow"], self.left_hand["leftover_pairing"] = self.fill_hand(self.left_hand)
 
 	def modify_weights_for_lh(self):
@@ -148,9 +153,9 @@ class Measure:
 	def display_right_hand(self):
 		for b in self.right_hand["pattern"]:
 			count = 0
-			for d in [d for d in b if d[0] != "|"]:
-				print(f"{d[0]}", end=" ")
-				count += d[1]
+			for d in [d for d in b if d[0][0] != "|"]:
+				print(f"{d[0][0]}", end=" ")
+				count += d[0][1]
 			print(f" /  --> {count}")
 		print(f'Overflow beats: {self.right_hand["overflow"]}')
 
@@ -174,7 +179,6 @@ class Measure:
 			new_beat = []
 			count = 0 # Floatable beat count within beat
 
-			# Not sure why there's a why condition for this LOG
 			if beat > 0:
 				print(f"LOG: Starting beat {beat+1} with {carryover} carryover and {filled_beats} filled beats. Count reset to {count}")
 
@@ -255,27 +259,55 @@ class Measure:
 
 			# If final measure, and we have overflow, remove tie
 
-			print(f"LOG: Count {count} reached for beat {len(pattern)+1}. Appending to right_hand_pattern with {filled_beats} filled_beats and {carryover} carryover")
+			print(f'LOG: Count {count} reached for beat {len(pattern)+1}. Appending to {hand["side"]}_hand pattern with {filled_beats} filled_beats and {carryover} carryover')
 			pattern.append(new_beat)
 
 		print(f"LOG: End of Measure reached. Returning {carryover} carryover OR converting {filled_beats} filled_beats for right_carryover variable")
 
 		carryover += filled_beats
-
+		print(f"DEBUG: carryover {carryover}")
 		if self.final_measure == True and carryover:
+			print(f"DEBUF: Removing tie")
 			self.remove_tie_if_final(pattern)
-			pattern[-1].append(("|", 0))
-			pairing
 
 		return carryover, pairing
 
+	def get_syncs(self):
+		mark_index = 0
+		markers = self.get_sync_markers()
+		syncs = []
+		for mark in markers:
+			if mark[0]:
+				syncs.append(mark)
+			else:
+				if len(markers) > mark_index + 1:
+					beat_limit = markers[mark_index+1][1] - markers[mark_index][1]
+				else:
+					beat_limit = None
+				syncs.append((self.get_random_duration(self.left_hand["duration_weights"], beat_limit=beat_limit), mark[1]))
+			mark_index += 1
+		return syncs
+
+	def get_sync_markers(self):
+		markers = []
+		b_count = 0
+		duration = None
+		for b in self.right_hand["pattern"]:
+			for d in [d for d in b if d[0][1] > .125 and d[1] >= self.left_hand["carryover"]]:
+				if random.randint(1, 20) > 20 - SYNCING_THRESHOLD:
+					# chance to match rh's duration
+					if random.randint(0, 2) == 0:
+						# give d's duration only, not the count
+						duration = (d[0][0], d[0][1])
+					markers.append((duration, b_count + d[1]))
+			b_count += 1
+
+		return markers
+
 	# Returns pairing list. empty if none
 	def check_pairing(self, duration, count):
-		if duration[1] not in PAIRING_DURATIONS:
-			return []
-		
-		# check if its on strong beat or beat subdivision
-		if self.check_beat_strength(duration, count) == True:
+
+		if duration[1] in PAIRING_DURATIONS and self.check_beat_strength(duration, count) == True:
 			pairing = self.get_pairing(duration)
 			print(f"LOG(check_pairing): Pairing {pairing} created. Returning")
 			return pairing
@@ -300,7 +332,7 @@ class Measure:
 	def remove_tie_if_final(self, pattern):
 		for i in range(len(pattern)-1, 0, -1):
 			if pattern[i]:
-				pattern[i][-1] = (pattern[i][-1][0][:-1], pattern[i][-1][1])
+				pattern[i][-1] = ((pattern[i][-1][0][0][:-1], pattern[i][-1][0][1]), pattern[i][-1][1])
 
 	def get_filled_beats_spawn(self, spawn_beats, pattern):
 		# Appends with tie if no exact match, returns finisher for new_duration
@@ -360,5 +392,12 @@ class Measure:
 
 
 if __name__ == "__main__":
-	rhythm = Rhythm(16, (7,8))
-	print(rhythm.right_notation)
+
+	rhythm = Rhythm(6, (7,8))
+
+	rhythm.display_right_hand_pattern()
+	print(f"Measure {rhythm.pattern[-4].number} syncs: {rhythm.pattern[-4].syncs}")
+	print(f"Measure {rhythm.pattern[-3].number} syncs: {rhythm.pattern[-3].syncs}")
+	print(f"Measure {rhythm.pattern[-2].number} syncs: {rhythm.pattern[-2].syncs}")
+	print(f"Measure {rhythm.pattern[-1].number} syncs: {rhythm.pattern[-1].syncs}")
+

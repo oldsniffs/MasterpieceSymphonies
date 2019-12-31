@@ -11,6 +11,8 @@ Remove all references to hand. Just use left or right
 
 Big Todos:
 
+complete_beat likely needs to be made to respect sub beat crossing rules
+
 Implement accidentals
 Multiple pitches per duration
 Left Hand (more likely for "chords")
@@ -24,7 +26,8 @@ Keys
 Average duration size
 Note boundaries by hand
 - Drop down list of notes, generated based on key
-
+LH syncing
+- get_syncs rolls between 1, 20-SYNC_THRESHOLD. This preference will change threshold
 Extra exotics- time signature changes
 
 Reduce overflow on or off (triggers a check to fill out a beat or measure instead of carryover)
