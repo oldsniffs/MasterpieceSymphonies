@@ -24,11 +24,14 @@ class Notation:
 		self.scale = self.map_scale()
 		self.right_limits = right_limits
 		self.left_limits = left_limits
-		self.rh_notes = self.map_right()
+		self.rh_notes = self.map_hand(self.right_limits)
+		self.lh_notes = self.map_hand(self.left_limits)
+		print(f"DEBUG: {self.scale_map}")
 		print(f"DEBUG: rh_notes: {self.rh_notes}")
+		print(f"DEBUG: lh_notes: {self.lh_notes}")
 
 		self.right_rhythm = rhythm.right_notation
-		print(f"DEBUG: rhythm.right_notation {rhythm.right_notation}")
+		self.left_rhythm = rhythm.left_notation
 
 		self.accidental_freq = accidental_freq
 		self.rest_freq = rest_freq
@@ -37,6 +40,7 @@ class Notation:
 		self.interval_weights = [12, 14, 10, 4, 3, 2, 1]
 
 		self.right_notation = self.compose_right_hand()
+		self.left_notation = self.compose_left_hand()
 
 	def get_base_list(self):
 		if self.key_type == "major":
@@ -50,8 +54,8 @@ class Notation:
 			else:
 				return FLAT_LIST
 
-	def map_right(self):
-		right_pitches = []
+	def map_hand(self, limits):
+		pitches = []
 		base_list = self.base_list()
 
 		start_index = base_list.index(self.key+"'")
@@ -59,8 +63,8 @@ class Notation:
 		run = 0
 		for i in self.scale_map:
 			try:
-				if base_list[start_index+run] != self.right_limits[1]:
-					right_pitches.append(base_list[start_index+run])
+				if base_list[start_index+run] != limits[1]:
+					pitches.append(base_list[start_index+run])
 					run += i
 				else:
 					break
@@ -71,14 +75,25 @@ class Notation:
 		for i in reversed(self.scale_map):
 			try:
 				run += i
-				if base_list[start_index-run] != self.right_limits[0] and start_index-run >= 0:
-					right_pitches.insert(0, base_list[start_index-run])
+				if base_list[start_index-run] != limits[0] and start_index-run >= 0:
+					pitches.insert(0, base_list[start_index-run])
 				else:
 					break
 			except IndexError:
 				break
 
-		return right_pitches
+		return pitches
+
+	def map_left(self):
+		pitches = []
+		base_list = self.base_list()
+
+		# run = 0
+		# for i in self.scale_map:
+		# 	try:
+		# 		run += 1
+		# 		if base_list:
+		# 			pass
 
 
 	def map_scale(self): # Currently deprecated, keeping for time
@@ -156,6 +171,8 @@ class Notation:
 			current_direction, span = self.set_direction(previous_direction, previous_note-anchor, span)
 			print(f"LOG: rolling new pitch in measure {measure} with interval {interval} from previous note index {previous_note} in direction {current_direction}")
 			print(f"LOG: index for p should be: {previous_note+(interval*current_direction)}")
+			if previous_note+(interval*current_direction) < 0:
+				current_direction *= -1			
 			try:
 				p = self.rh_notes[previous_note+(interval*current_direction)]
 			except IndexError:
@@ -170,6 +187,59 @@ class Notation:
 				tied_note = True
 
 		return right_hand_notation
+
+	def compose_left_hand(self):
+
+		print(f"LOG(compose_left_hand): Composing right hand. Checking lh_notes: {self.lh_notes}")
+
+		left_hand_notation = []
+
+		measure = 1
+		anchor_count = 1
+		anchor = self.lh_notes.index(self.key+",")-2
+		previous_note = anchor
+		previous_direction = None
+		span = 0
+		tied_note = False
+
+		for d in self.left_rhythm:
+
+			if "M" in d:
+				continue
+
+			if d == "|":
+				left_hand_notation.append(d)
+				measure += 1
+				continue
+
+			if tied_note:
+				print(f"LOG(compose_left_hand): Tie detected, setting interval 0")
+				interval = 0
+				tied_note = False
+			else:
+				interval = random.choices(INTERVALS, self.interval_weights)[0]
+
+			# if for rests. Different duration rules for rests?
+
+			current_direction, span = self.set_direction(previous_direction, previous_note-anchor, span)
+			print(f"LOG(compose_left_hand): rolling new pitch in measure {measure} with interval {interval} from previous note index {previous_note} in direction {current_direction}")
+			print(f"LOG(compose_left_hand): index for p should be: {previous_note+(interval*current_direction)}")
+			if previous_note+(interval*current_direction) < 0:
+				current_direction *= -1
+			try:
+				p = self.lh_notes[previous_note+(interval*current_direction)]
+			except IndexError:
+				p = self.lh_notes[previous_note-(interval*current_direction)]
+			print(f"LOG(compose_left_hand): rolled pitch: {p}")
+
+
+			left_hand_notation.append(f"{p}{d} ")
+			previous_note = self.lh_notes.index(p)
+			previous_direction = current_direction
+			if "~" in d:
+				tied_note = True
+
+		return left_hand_notation
 
 	def set_direction(self, current_direction, distance_from_anchor, span):
 		if not current_direction:
@@ -211,4 +281,5 @@ if __name__ == "__main__":
 	notation = Notation("d", 'major', RH_LIMITS, LH_LIMITS, durationsre.Rhythm(10, (4,4)), 0, 1, 0)
 	print(f"LOG: rh_notes: {notation.rh_notes}")
 	print(notation.scale)
-	print(notation.right_notation)
+	print(f"right_notation: {notation.right_notation}")
+	print(f"left_notation: {notation.left_notation}")
