@@ -14,23 +14,33 @@ def create_ly(content, file_name):
     file.close
 
 
-def compose(total_beats):
-	notation = pitchesre.Notation("a", "major",['g', "c'''''"], pitchesre.LH_LIMITS, test_rhythm, None, 1, None)
-	test_rhythm.display_right_hand_pattern()
-	composition = ""
+def compose():
+	notation = pitchesre.Notation("d", "major",['g', "c'''''"], ['a,,,', "f'"], test_rhythm, None, 1, None)
+	test_rhythm.display_hand_patterns()
+	right_composition = ""
+	left_composition = ""
 	for n in notation.right_notation:
 		if "|" in n:
 			print(f"Adding {n}")
-			composition = composition + f'{n} '
+			right_composition = right_composition + f'{n} '
 		else:
 			print(f"Adding {n}")
-			composition = composition + f'{n} '
+			right_composition = right_composition + f'{n} '
 
-	print(composition)
-	return composition
+	for n in notation.left_notation:
+		if "|" in n:
+			print(f"Adding {n}")
+			left_composition = left_composition + f'{n} '
+		else:
+			print(f"Adding {n}")
+			left_composition = left_composition + f'{n} '
+
+	print(f"Right: {right_composition}") 
+	print(f"Left: {left_composition}")
+	return right_composition, left_composition
 
 
-right_hand = compose(64)
+right_hand, left_hand = compose()
 content = """upper = {
   \\clef treble
   \\key c \\major
@@ -47,6 +57,10 @@ lower = {
   \\key c \\major
   \\time 4/4
 
+"""
+content = content + left_hand
+
+content = content + """
 }
 
 \\score {
