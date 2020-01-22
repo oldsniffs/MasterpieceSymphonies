@@ -1,3 +1,25 @@
+Proper Dev Process ---- unit testing, good proper commits
+advance git usage
+
+Then learn: corey schafer virtual env & django tutorial
+
+Then: next commit for music project
+
+Selenium video --- use for scrape?
+
+
+3 Pillars , 3 Notesbooks
+
+1. Short tutorials, tricks, methods
+
+2. In-depth course-like material - Cory's django series, studio web + coding challenges + euler
+
+3. Projects
+
+(4.) Meta, career direction, lifestyle, etc
+
+
+
 Misc Todos:
 Appropriate durations currently excludes durations longer than bpm. This isn't stricly necessary, but those durations 
 should probably be ID'd and weighted down.
@@ -5,13 +27,17 @@ should probably be ID'd and weighted down.
 If ties end up too numerous, can reduce occurences with a chance to select note that fits beat division
 A method that finds a fitting duration, such as a dotted note, and applies it
 
+Pitches following a short duration should jump less
+
 
 Small Todos:
 Remove all references to hand. Just use left or right
 
 Big Todos:
 
-complete_beat likely needs to be made to respect sub beat crossing rules
+Mid-song duration weight changes
+
+complete_beat might need better respect for beat crossing rules
 
 Implement accidentals
 Multiple pitches per duration

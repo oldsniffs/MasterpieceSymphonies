@@ -3,3 +3,5 @@ FLAT_LIST = [None, 'a,,,,', 'bes,,,,', 'b,,,,', 'c,,,,', 'des,,,,', 'd,,,,', 'ee
 
 
 	def __init__(self, number, time_signature, all_durations, appropriate_durations, whole_beat_durations, duration_weights, right_carryover=0, left_carryover=0, right_pairing=[], left_pairing=[], final_measure=False):
+
+

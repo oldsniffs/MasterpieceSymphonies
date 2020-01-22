@@ -1,7 +1,7 @@
 import random
 
 ALL_DURATION_NOTATIONS = ['1.', '1', '2.', '2', '4.', '4', '8.', '8', '16.', '16', '32.', '32', '64']
-DURATION_WEIGHTS = [(6, 2), (4, 6), (3, 5), (2, 16), (1.5, 8), (1, 25), (.75, 8), (.5, 20), (.375, 6), (.25, 12), (.1875, 2), (.125, 5), (.0625, 1)]
+DURATION_WEIGHTS = [(6, 1), (4, 6), (3, 5), (2, 16), (1.5, 3), (1, 26), (.75, 3), (.5, 20), (.375, 4), (.25, 6), (.1875, 0), (.125, 2), (.0625, 1)]
 
 FILLER_ONLY_DURATIONS = ['1..', '2..', '4..', '8..', '16..', '32..', '64..'] # God forbid 64.. is ever used
 LH_MODIFIER = 1.6
@@ -10,7 +10,7 @@ PAIRING_DURATIONS = [.5, .25, .125, .0625]
 PAIRING_LENGTHS = [1, 2, 3, 4, 5, 6, 7]
 # Weights: [(chance/10 of pairing[length weights])]
 PAIRING_WEIGHTS_OLD = [(2, [6, 2, 1, 0, 0, 0, 0]), (4, [1, 4, 2, 1, 0, 0, 0]), (9, [2, 6, 4, 2, 1, ]), (9, [2, 6, 4, 2, 2])]
-PAIRING_WEIGHTS = [(2, [6, 2, 4, 1, 2, 0, 0]), (4, [7, 3, 5, 2, 1, 0, 0]), (9, [8, 4, 6, 3, 3, 1, 0]), (9, [10, 5, 8, 4, 6, 3, 2])]
+PAIRING_WEIGHTS = [(2, [6, 0, 4, 0, 2, 0, 0]), (4, [7, 0, 5, 0, 1, 0, 0]), (9, [8, 0, 6, 0, 3, 0, 0]), (9, [10, 0, 8, 0, 6, 0, 2])]
 
 
 SYNCING_THRESHOLD = 4
@@ -453,3 +453,4 @@ if __name__ == "__main__":
 		print(f"Matched syncs used: {measure.matched_syncs}")
 	print(f"left: {rhythm.left_notation}")
 	print(f"right: {rhythm.right_notation}")
+	print(f'durations list: {rhythm.appropriate_durations} {rhythm.weights_list}')

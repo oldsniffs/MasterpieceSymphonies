@@ -148,6 +148,7 @@ class Notation:
 		previous_direction = None
 		span = 0
 		tied_note = False
+		p = 'r'
 
 		for d in self.right_rhythm:
 
@@ -179,8 +180,12 @@ class Notation:
 				p = self.rh_notes[previous_note-(interval*current_direction)]
 			print(f"LOG: rolled pitch: {p}")
 
+			# if random.randint(0, 5) == 5:
+			# 	print(f"LOG: Rest inserted ============================")
+			# 	p = "r"
 
 			right_hand_notation.append(f"{p}{d} ")
+			print(f"LOG: {p}{d}  appended")
 			previous_note = self.rh_notes.index(p)
 			previous_direction = current_direction
 			if "~" in d:
@@ -250,7 +255,7 @@ class Notation:
 		base = anchor_weight + span
 		flip = False
 
-		if base > 14:
+		if base > 9:
 			flip = True
 		
 		else: 

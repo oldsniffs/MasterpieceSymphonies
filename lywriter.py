@@ -74,7 +74,7 @@ content = content + """
 } """
 
 print(right_hand)
-create_ly(content, 'test9')
+create_ly(content, 'test10')
 #
 # file = open('testly.ly', 'w')
 #
