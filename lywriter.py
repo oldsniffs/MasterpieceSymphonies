@@ -1,10 +1,13 @@
 import durationsre
 import pitchesre
+import composer
+
+
 
 test_rhythm = durationsre.Rhythm(12, (4,4))
 
 
-class Ly:
+class Masterpiece:
 	def __init__(self, key, key_type, time_signature, left_limits, right_limits):
 		pass
 
@@ -73,10 +76,13 @@ content = content + """
   \\midi { }
 } """
 
-print(right_hand)
-create_ly(content, 'test10')
-#
-# file = open('testly.ly', 'w')
-#
-# file.write(content)
-# file.close
+
+if __name__ == "__main__":
+
+	print(right_hand)
+	create_ly(content, 'test11')
+	#
+	# file = open('testly.ly', 'w')
+	#
+	# file.write(content)
+	# file.close
